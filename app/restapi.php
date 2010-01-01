@@ -2,6 +2,7 @@
 /*
 
 Basic REST functions: Copyright (C) 2004 Paul James <paul@peej.co.uk>
+Additional coding and customizations (C) 2009 Alex Barger <cruzinthegalaxie@gmail.com>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -128,6 +129,7 @@ class restapi {
 			$urlParts = explode('/', $urlString);
 			
 			$lastPart = array_pop($urlParts);
+			$dotPosition = strpos($lastPart, '.');
 			$dotPosition = strpos($lastPart, '.');
 			if ($dotPosition !== FALSE) {
 				$this->extension = substr($lastPart, $dotPosition + 1);
@@ -395,7 +397,8 @@ class restapi {
 	   if ($resource && $this->db->numRows($resource) == 0) {
 	      $resource = $this->db->insertRow('users', $names, $values);
 	      $this->output['struct']['result'] = ($this->db->numAffected($resource) > 0) ? 'true' : 'false';
-              //$this->created();
+              $this->sendEmailConfirmation();
+              $this->accepted();
 	   } else {
 	      $this->output['struct']['error'] .= ' Email already exists';
 	      $this->output['struct']['result'] = 'false';
@@ -406,6 +409,41 @@ class restapi {
 	//output
 	$this->display = 'struct';
 	$this->simpleResponse();
+	exit; // prevent 500 Internal Server Issue
+    }
+
+
+    function sendEmailConfirmation(){
+        // multiple recipients
+        $to .= 'cruzinthegalaxie@gmail.com';
+
+        // subject
+        $subject = 'FluidIA - Confirm Your Email (' . rand(0,1000) . ')';
+
+        // message
+        $message = '
+           <html>
+           <head>
+             <title>Confirm Your Email</title>
+           </head>
+           <body>
+             <p>Testing... Click on the following link: <a href="http://google.com">click here.</a></p>
+             <p>Or copy and paste this url into your browser:  http://google.com
+             </p>
+           </body>
+          </html>
+        ';
+
+        // To send HTML mail, the Content-type header must be set
+        $headers  = 'MIME-Version: 1.0' . "\r\n";
+        $headers .= 'Content-type: text/html; charset=iso-8859-1' . "\r\n";
+
+        // Additional headers
+        $headers .= 'To: Alex Barger <cruzinthegalaxie@gmail.com>' . "\r\n";
+        $headers .= 'From: FluidIA <noreply@fluidia.org>' . "\r\n";
+
+        // Mail it
+        mail($to, $subject, $message, $headers);
     }
 
     function simpleResponse(){
@@ -783,6 +821,13 @@ class restapi {
     }
     
     /**
+     * Send a HTTP 201 response header.
+     */
+    function accepted() {
+        header('HTTP/1.0 202 Accepted');
+    }
+
+    /**
      * Send a HTTP 204 response header.
      */
     function noContent() {
@@ -856,4 +901,3 @@ class restapi {
     
 }
 
-?>

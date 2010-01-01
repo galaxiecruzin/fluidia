@@ -150,7 +150,8 @@ function dologin(){
 
  var auth = make_base_auth(username, password);
  var url = '<?php echo $config['settings']['baseURL'];?>/login.json';
-
+ 
+/*
  // jQuery
  $.ajax({
     url : url,
@@ -159,6 +160,30 @@ function dologin(){
         req.setRequestHeader('Authorization', auth);
     }
  });
+*/
+
+       $.ajax({
+           url : url,
+           method : 'GET',
+           beforeSend : function(req) {
+               req.setRequestHeader('Authorization', auth);
+           },
+           dataType : 'json',
+           success: function(data, status){
+           		if(data.result == 'logged_in'){
+           			alert( "S: " + data.result);	
+           		} else if(data.result == 'not_logged_in') {
+           			alert( "F: " + data.result);
+           		} else {
+           			alert("Major Failure");
+           		}
+                
+              },
+           error : function(data,status) {
+               alert( "Data Error: " + data.result + ":" + status );
+           }
+
+        });
 
 }
 
