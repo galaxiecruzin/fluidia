@@ -79,9 +79,64 @@ $config = parse_ini_file('restapi.ini', TRUE);
 		   <li>
 			<a class="rest" href="<?php echo $config['settings']['baseURL'] ?>/save_session">save_session</a>
 		   </li>
+		   <li>
+			<a class="rest" href="<?php echo $config['settings']['baseURL'] ?>/download_session">download_session</a>
+		   </li>
 		</ul>
 		</div>		
 	</div>
+
+<!-- Upload File -->
+<h3>Upload FLD File</h3>
+<p>
+<form action="<?php echo $config['settings']['baseURL'] ?>/upload_fld" method="post" enctype="multipart/form-data">
+  Send this file:<br />
+  <input name="userfile" type="file" /><br />
+  <input type="submit" value="Send files" />
+</form>
+</p>
+
+<!-- Save Session -->
+<h3>Save Session</h3>
+<p>
+<form>
+<table>
+<tr><td colspan=2><input id="savedata" type="text" value='{"a":1,"b":2,"c":3,"d":4,"e":5'}></td><tr>
+<tr><td colspan=2><input value="Save Session" type="button" onclick="savesession();"></td><tr>
+</table>
+</form>
+</p>
+
+<!-- Load Session -->
+<h3>Load Session</h3>
+<p>
+<form>
+<table>
+<tr><td><input id="loadkey" type="text" value='1'></td><tr>
+<tr><td><input value="Load Session" type="button" onclick="loadsession();"></td><tr>
+</table>
+</form>
+</p>
+
+<!-- Download Session -->
+<h3>Download Session</h3>
+<p>
+<form>
+<table>
+<tr><td><a href="<?php echo $config['settings']['baseURL'];?>/download_session.json"><strong>Download Session</strong></a></td><tr>
+</table>
+</form>
+</p>
+
+<!-- Check Session -->
+<h3>Check Session</h3>
+<p>
+<form>
+<table>
+<tr><td colspan=2><input value="Load Session" type="button" onclick="checksession();"></td><tr>
+</table>
+</form>
+</p>
 
 <!-- Email Exists Test -->
 <h3>Check Email Exists</h3>
@@ -128,6 +183,24 @@ function make_base_auth(user, password) {
   var tok = user + ':' + password;
   var hash = Base64.encode(tok);
   return "Basic " + hash;
+}
+
+function checksession(){
+	var url = '<?php echo $config['settings']['baseURL'];?>/check_session.json';
+	$.get(url);
+}
+
+function savesession(){
+ var url = '<?php echo $config['settings']['baseURL'];?>/save_session.json';
+ // jQuery
+ var data = document.getElementById('savedata').value;
+ $.post(url, { fluidia_object : data } );
+}
+
+function loadsession(){
+ var url = '<?php echo $config['settings']['baseURL'];?>/load_session.json';
+ var key = document.getElementById('loadkey').value;
+ $.get(url, { key: key} );
 }
 
 function doregister(){

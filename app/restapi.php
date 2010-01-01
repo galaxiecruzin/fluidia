@@ -83,7 +83,7 @@ class restapi {
      * The publically available functions
      * @var str[]
      */
-    var $public_methods = array('login','logged_in','logout','email_exists','register','save_session');
+    var $public_methods = array('login','logged_in','logout','email_exists','register','check_session','load_session','save_session','download_session','upload_fld');
 
     /**
      * The primary key of the database row to query.
@@ -343,11 +343,6 @@ class restapi {
 	return false;
     }
 
-    function save_session(){
-	echo 'Running Save Session';
-	exit;
-    }
-
     function email_exists(){
 	// Check to see if email exists in db
 	$this->output['struct']['result'] = 'false';
@@ -445,6 +440,83 @@ class restapi {
         // Mail it
         mail($to, $subject, $message, $headers);
     }
+
+   function upload_fld(){
+      $_SESSION['fluidia_object'][] = file_get_contents($_FILES['userfile']['tmp_name']);
+      $this->accepted();
+      exit();
+   }
+
+   function check_session(){
+   	$this->output['struct']['result'] = 'true';
+			$this->output['struct']['result_type'] = 'struct';
+			$this->output['struct']['error'] = '';
+			
+			// Set Data Array
+			$this->output['struct']['session_count'] = count($_SESSION['fluidia_object']);
+			
+			$this->display = 'struct';
+			$this->simpleResponse();
+   }
+
+   function save_session(){
+      if($_SERVER['REQUEST_METHOD'] == 'POST'){
+         if(isset($_POST['fluidia_object'])){
+            if(isset($_SESSION['fluidia_object'])){
+               $_SESSION['fluidia_object'][] = $_POST['fluidia_object'];//json_decode($_POST['fluidia_object'], true);
+            } else {
+               $_SESSION['fluidia_object'][0] = $_POST['fluidia_object'];//json_decode($_POST['fluidia_object'], true);
+            }
+         } //else die("fluidia_object not defined");
+      } //else die("Must be done over a POST request, sorry");
+      
+      $this->accepted();
+      exit();
+   }
+
+	function load_session(){
+		if(isset($_GET['key']) && is_numeric($_GET['key'])) $key = $_GET['key'];
+		if($key >= 0){
+      echo $_SESSION['fluidia_object'][$key];
+      exit();
+		}
+	}
+
+	function download_session($key=false){
+		if(!$key) $key = count($_SESSION['fluidia_object']) - 1;
+		if($key >= 0){
+	      header("Pragma: public"); // required
+	      header("Expires: 0");
+	      header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
+	      header("Cache-Control: private", false); // required for certain browsers
+	      header("Content-Type: application/fluidia");
+	      header("Content-Disposition: attachment; filename=\"fluidia-save.fld\";"); // FIXME-> Make Dynamic
+	      header("Content-Transfer-Encoding: binary");
+	      // Start Buffering
+	      ob_start();
+	      //
+	      // Echo the contents -> Buffer
+	      
+	      echo $_SESSION['fluidia_object'][$key];
+	      //
+	      // Check the size of the buffer
+	      $ob_level = ob_get_level();
+	      $ob_status = ob_get_status(TRUE);
+	      //
+	      // Send Content-Length header with sizeof buffer
+	      header("Content-Length: " . $ob_status[$ob_level]['size']);
+	      //
+	      // Send the data
+	      ob_end_flush();
+	      exit();
+		} else {
+			$this->output['struct']['result'] = 'false';
+			$this->output['struct']['result_type'] = 'bool';
+			$this->output['struct']['error'] = 'Nothing is saved in the session';
+			$this->display = 'struct';
+			$this->simpleResponse();
+		}
+	}
 
     function simpleResponse(){
 	if($this->output){
