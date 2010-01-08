@@ -77,13 +77,38 @@ class restapi {
      * The internal functions
      * @var str[]
      */
-    var $internal_methods = array('users','users_has_projects','projects','revisions','sessions');
+    var $internal_methods = array(
+       'users',
+       'users_has_projects',
+       'projects',
+       'revisions',
+       'sessions',
+       // TODO: Add
+       'load_from_url',
+       'load_from_project',
+       'save_to_project',
+       'get_user_projects'
+       //
+    );
 
     /**
      * The publically available functions
      * @var str[]
      */
-    var $public_methods = array('login','logged_in','logout','email_exists','register','check_session','load_session','save_session','download_session','upload_fld');
+    var $public_methods = array(
+		'login',
+		'logged_in',
+		'logout',
+		'email_exists',
+		'register',
+		'check_session',
+		'load_session',
+		'save_session',
+		'download_session',
+		'upload_fld',
+		'project_exists',
+		'create_project'
+	);
 
     /**
      * The primary key of the database row to query.
@@ -188,12 +213,12 @@ class restapi {
         //var_dump($this->table);
 
 	$this->output['log'] = "#----Exec Start----.\n";
-        if($this->table == ''){
+       if($this->table == ''){
 	    $this->output['log'] .= "No Parameters.\n";
             $this->controller_function = 'home_index';
 	    $this->go();
             exit;
-        } elseif(in_array($this->table,$this->public_methods)){
+       } elseif(in_array($this->table,$this->public_methods)){
 	    $this->output['log'] .= "Public Method Called:".$this->table.".\n";
             $this->controller_function = $this->table;
             $this->connect();
@@ -202,7 +227,7 @@ class restapi {
 	    // Time to check basic permissions
 	    // Currently everything that gets here requires login
 	    $this->output['log'] .= "Authentication Required.\n";
-            $this->connect();
+       $this->connect();
 	    $this->require_login();
 	};
 	//
@@ -302,7 +327,7 @@ class restapi {
 	      $this->output['struct']['error'] = 'Record Found';
               if ($this->db->numRows($resource) == 1) {
                  $row = $this->db->row($resource);
-                 $this->user = array('userid' => $row['username'], 'role' => $row['role'], 'active' => $row['active']);
+                 $this->user = array('id' => $row['id'], 'userid' => $row['username'], 'role' => $row['role'], 'active' => $row['active']);
 	         $this->output['struct']['error'] = '';
 	      $this->output['struct']['statuscode'] = 200;
 	      } else {
@@ -409,8 +434,8 @@ class restapi {
 
 
     function sendEmailConfirmation(){
-        // multiple recipients
-        $to .= 'cruzinthegalaxie@gmail.com';
+        // Set Recipient
+        $to .= 'cruzinthegalaxie@gmail.com'; // TODO: FIXME-> Make dynamic
 
         // subject
         $subject = 'FluidIA - Confirm Your Email (' . rand(0,1000) . ')';
@@ -427,15 +452,15 @@ class restapi {
              </p>
            </body>
           </html>
-        ';
+        '; // FIXME-> Make dynamic
 
         // To send HTML mail, the Content-type header must be set
         $headers  = 'MIME-Version: 1.0' . "\r\n";
         $headers .= 'Content-type: text/html; charset=iso-8859-1' . "\r\n";
 
         // Additional headers
-        $headers .= 'To: Alex Barger <cruzinthegalaxie@gmail.com>' . "\r\n";
-        $headers .= 'From: FluidIA <noreply@fluidia.org>' . "\r\n";
+        $headers .= 'To: Alex Barger <cruzinthegalaxie@gmail.com>' . "\r\n"; // TODO: FIXME-> Make dynamic
+        $headers .= 'From: FluidIA <noreply@fluidia.org>' . "\r\n"; // TODO: FIXME-> Make dynamic
 
         // Mail it
         mail($to, $subject, $message, $headers);
@@ -475,39 +500,52 @@ class restapi {
    }
 
 	function load_session(){
+		$key = count($_SESSION['fluidia_object']);
 		if(isset($_GET['key']) && is_numeric($_GET['key'])) $key = $_GET['key'];
 		if($key >= 0){
-      echo $_SESSION['fluidia_object'][$key];
-      exit();
+		   // Decrement $key to match index verses count
+			if($key > 0) $key--;
+			if(array_key_exists($key,$_SESSION['fluidia_object'])){
+            echo $_SESSION['fluidia_object'][$key];
+			} else {
+				$this->noContent();
+			}
+         exit();
 		}
 	}
 
 	function download_session($key=false){
-		if(!$key) $key = count($_SESSION['fluidia_object']) - 1;
+		if(!$key) $key = count($_SESSION['fluidia_object']);
 		if($key >= 0){
-	      header("Pragma: public"); // required
-	      header("Expires: 0");
-	      header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
-	      header("Cache-Control: private", false); // required for certain browsers
-	      header("Content-Type: application/fluidia");
-	      header("Content-Disposition: attachment; filename=\"fluidia-save.fld\";"); // FIXME-> Make Dynamic
-	      header("Content-Transfer-Encoding: binary");
-	      // Start Buffering
-	      ob_start();
-	      //
-	      // Echo the contents -> Buffer
-	      
-	      echo $_SESSION['fluidia_object'][$key];
-	      //
-	      // Check the size of the buffer
-	      $ob_level = ob_get_level();
-	      $ob_status = ob_get_status(TRUE);
-	      //
-	      // Send Content-Length header with sizeof buffer
-	      header("Content-Length: " . $ob_status[$ob_level]['size']);
-	      //
-	      // Send the data
-	      ob_end_flush();
+			// Decrement $key to match index verses count
+			if($key > 0) $key--;
+			if(array_key_exists($key,$_SESSION['fluidia_object'])){
+		      header("Pragma: public"); // required
+		      header("Expires: 0");
+		      header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
+		      header("Cache-Control: private", false); // required for certain browsers
+		      header("Content-Type: application/fluidia");
+		      header("Content-Disposition: attachment; filename=\"fluidIA-save.fld\";"); // # TODO: FIXME-> Make dynamic of project name
+		      header("Content-Transfer-Encoding: binary");
+		      // Start Buffering
+		      ob_start();
+		      //
+		      // Echo the contents -> Buffer
+		      
+		      echo $_SESSION['fluidia_object'][$key];
+		      //
+		      // Check the size of the buffer
+		      $ob_level = ob_get_level();
+		      $ob_status = ob_get_status(TRUE);
+		      //
+		      // Send Content-Length header with sizeof buffer
+		      header("Content-Length: " . $ob_status[$ob_level]['size']);
+		      //
+		      // Send the data
+		      ob_end_flush();
+			} else {
+			   $this->noContent();
+			}
 	      exit();
 		} else {
 			$this->output['struct']['result'] = 'false';
@@ -518,7 +556,95 @@ class restapi {
 		}
 	}
 
-    function simpleResponse(){
+	function load_from_url(){
+
+	}
+
+	function load_from_project(){
+		
+	}
+
+	function project_exists(){
+	   $where = " `name` LIKE '".$this->sanitize($_GET['project'])."%'";
+	   $where .= ' LIMIT 1 ';
+	   //
+	   $resource = $this->db->getRow('projects', $where);
+	   //
+	   $this->output['struct']['result'] = ($this->db->numRows($resource) > 0) ? 'true' : 'false';		
+
+		$this->output['struct']['result_type'] = 'bool';
+		$this->output['struct']['error'] = '';
+		$this->display = 'struct';
+		$this->simpleResponse();
+		//var_dump($this->output); exit();
+	}
+
+	function create_project(){
+	ob_start();
+	//
+	$this->output['struct']['result'] = 'false';
+	$this->output['struct']['result_type'] = 'bool';
+	$this->output['struct']['error'] = '';
+	$errors = false;
+
+	if(!$errors){
+      $names = 'name`, `description`,`date_created';
+      $values = $_POST['project'].'","'.$_POST['description'].'","'.date('Y-m-d G:i:s');
+
+	   // Check if project exists
+	   $where = " `name` LIKE '".$_POST['project']."%'";
+	   $where .= ' LIMIT 1 ';
+      $resource = $this->db->getRow('projects', $where);
+	   if ($resource && $this->db->numRows($resource) == 0) {
+	      $resource = $this->db->insertRow('projects', $names, $values);
+	      $this->output['struct']['result'] = ($this->db->numAffected($resource) > 0) ? 'true' : 'false';
+	      // If that succeeds, add a record to users_has_projects
+	      if($this->output['struct']['result']){
+	      	// need id of user
+	      	$users_id = $_SESSION['user']['id'];
+	      	// need id of project
+	      	$projects_id = $this->db->lastInsertId();
+	      	// set privs as master admin to project
+	      	$privs = '1111111111';
+	      	
+	      	//
+	      	$names = 'users_id`, `projects_id`,`privileges';
+            $values = $users_id.'","'.$projects_id.'","'.$privs;
+            //echo $values; exit();
+            //
+            $resource = $this->db->insertRow('users_has_projects', $names, $values);
+            $this->output['struct']['result'] = ($this->db->numAffected($resource) > 0) ? 'true' : 'false';
+	      }
+         $this->accepted();
+	   } else {
+	      $this->output['struct']['error'] .= ' Project already exists';
+	      $this->output['struct']['result'] = 'false';
+	   }
+	} else {
+           $this->notAcceptable();
+	}
+	//output
+	$this->display = 'struct';
+	$this->simpleResponse();
+	exit; // prevent 500 Internal Server Issue
+	}
+
+	function save_to_project(){
+		
+	}
+
+	function get_user_projects(){
+		
+	}
+
+	function sanitize($input){
+		$output = mysql_real_escape_string($input);
+		return $output;
+	}
+	
+	// This function is to create very simple responce packets to send
+	// so that we don't need fancy renderers for simple tasks
+	function simpleResponse(){
 	if($this->output){
 	   // What are we rendering
 	   if($pos = strpos($this->extension,'?')){

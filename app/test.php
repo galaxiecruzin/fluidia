@@ -90,9 +90,11 @@ $config = parse_ini_file('restapi.ini', TRUE);
 <h3>Upload FLD File</h3>
 <p>
 <form action="<?php echo $config['settings']['baseURL'] ?>/upload_fld" method="post" enctype="multipart/form-data">
-  Send this file:<br />
-  <input name="userfile" type="file" /><br />
-  <input type="submit" value="Send files" />
+<table>
+<tr><td>Send this file:</td></tr>
+<tr><td><input name="userfile" type="file" /></td></tr>
+<tr><td><input type="submit" value="Upload File" /></td></tr>
+</table>
 </form>
 </p>
 
@@ -101,7 +103,7 @@ $config = parse_ini_file('restapi.ini', TRUE);
 <p>
 <form>
 <table>
-<tr><td colspan=2><input id="savedata" type="text" value='{"a":1,"b":2,"c":3,"d":4,"e":5'}></td><tr>
+<tr><td colspan=2><input id="savedata" type="text" value='{"a":1,"b":2,"c":3,"d":4,"e":5}'></td><tr>
 <tr><td colspan=2><input value="Save Session" type="button" onclick="savesession();"></td><tr>
 </table>
 </form>
@@ -123,7 +125,7 @@ $config = parse_ini_file('restapi.ini', TRUE);
 <p>
 <form>
 <table>
-<tr><td><a href="<?php echo $config['settings']['baseURL'];?>/download_session.json"><strong>Download Session</strong></a></td><tr>
+<tr><td><input type="button" onclick="downloadsession();" value="Download Session"></td><tr>
 </table>
 </form>
 </p>
@@ -133,10 +135,35 @@ $config = parse_ini_file('restapi.ini', TRUE);
 <p>
 <form>
 <table>
-<tr><td colspan=2><input value="Load Session" type="button" onclick="checksession();"></td><tr>
+<tr><td colspan=2><input value="Check Session" type="button" onclick="checksession();"></td><tr>
 </table>
 </form>
 </p>
+
+<!-- Project Exists Test -->
+<h3>Check Project Exists</h3>
+<p>
+<form>
+<table>
+<tr><td>Project Name:</td><td><input type="text" name="project" id="project"></td><tr>
+<tr><td colspan=2><input value="Check" type="button" onclick="checkproject();"></td><tr>
+</table>
+</form>
+</p>
+<!-- Project Exists Test -->
+
+<!-- Project Test -->
+<h3>Create Project</h3>
+<p>
+<form>
+<table>
+<tr><td>Project Name:</td><td><input type="text" name="projectName" id="projectName"></td><tr>
+<tr><td>Description:</td><td><input type="text" name="description" id="description"></td><tr>
+<tr><td colspan=2><input value="Create Project" type="button" onclick="createproject();"></td><tr>
+</table>
+</form>
+</p>
+<!-- Create Test -->
 
 <!-- Email Exists Test -->
 <h3>Check Email Exists</h3>
@@ -203,6 +230,11 @@ function loadsession(){
  $.get(url, { key: key} );
 }
 
+function downloadsession(){
+ var url = '<?php echo $config['settings']['baseURL'];?>/download_session.json';
+ window.open(url);
+}
+
 function doregister(){
  var fname = document.getElementById('fname').value;
  var lname = document.getElementById('lname').value;
@@ -215,6 +247,15 @@ function doregister(){
  // jQuery
  $.post(url, { email : username, passwd : password } );
 
+}
+
+function createproject(){
+ var name = document.getElementById('projectName').value;
+ var description = document.getElementById('description').value;
+ var url = '<?php echo $config['settings']['baseURL'];?>/create_project.json';
+
+ // jQuery
+ $.post(url, { project : name, description : description } );
 }
 
 function dologin(){
@@ -265,6 +306,13 @@ function checkemail(){
  var url = '<?php echo $config['settings']['baseURL'];?>/email_exists.json';
  // jQuery
  $.get(url, { email: email} );
+}
+
+function checkproject(){
+ var project = document.getElementById('project').value;
+ var url = '<?php echo $config['settings']['baseURL'];?>/project_exists.json';
+ // jQuery
+ $.get(url, { project: project} );
 }
 </script>
 <!-- Login Test -->
